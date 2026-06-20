@@ -102,12 +102,16 @@ const handleCollect = (id: string) => {
         </div>
       </div>
 
-      <div class="flex justify-center gap-3">
+      <div class="flex justify-center gap-3 flex-wrap">
+        <div class="glass rounded-xl px-4 py-2 text-amber-200 text-sm flex items-center gap-2 border border-amber-400/20">
+          <span>📂</span>
+          <span class="font-medium">{{ state.slotName ?? '未命名存档' }}</span>
+        </div>
         <button
           class="px-4 py-2 glass rounded-xl text-white/80 text-sm hover:bg-white/20 transition-all flex items-center gap-1.5"
           @click="returnToStart(); router.push('/')"
         >
-          <span>🏠</span> 返回主页
+          <span>📂</span> 返回存档
         </button>
         <div class="glass rounded-xl px-4 py-2 text-white/80 text-sm flex items-center gap-2">
           <span>💚</span> 存活 {{ aliveCount }} 只

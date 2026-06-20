@@ -13,6 +13,7 @@ onMounted(() => {
 })
 
 const score = computed(() => state.score)
+const slotName = computed(() => state.slotName ?? '未命名存档')
 
 const starArray = computed(() => {
   const s = score.value?.stars ?? 1
@@ -40,6 +41,13 @@ const handleHome = () => {
     </div>
 
     <div v-if="score" class="relative z-10 max-w-2xl w-full">
+      <div class="text-center mb-4 animate-pop-in">
+        <div class="inline-flex items-center gap-2 glass rounded-full px-4 py-1.5 text-amber-200 text-sm mb-3 border border-amber-400/20">
+          <span>📂</span>
+          <span class="font-medium">{{ slotName }}</span>
+        </div>
+      </div>
+
       <div class="text-center mb-6 animate-pop-in">
         <div class="text-7xl mb-4">{{ score.stars >= 4 ? '🏆' : score.stars >= 3 ? '🎉' : '🌱' }}</div>
         <h1 class="font-display text-5xl text-white mb-2 text-stroke">游戏结束</h1>
@@ -125,7 +133,7 @@ const handleHome = () => {
 
         <div class="flex flex-col sm:flex-row gap-3 justify-center">
           <button
-            class="px-8 py-4 bg-gradient-to-r from-green-500 to-emerald-600 text-white rounded-2xl
+            class="px-6 py-4 bg-gradient-to-r from-green-500 to-emerald-600 text-white rounded-2xl
                    font-bold text-lg btn-3d hover:from-green-400 hover:to-emerald-500 flex items-center justify-center gap-2"
             @click="handleRestart"
           >
@@ -133,12 +141,12 @@ const handleHome = () => {
             再来一窝！
           </button>
           <button
-            class="px-8 py-4 bg-gradient-to-r from-slate-600 to-slate-700 text-white rounded-2xl
-                   font-bold text-lg btn-3d hover:from-slate-500 hover:to-slate-600 flex items-center justify-center gap-2"
+            class="px-6 py-4 bg-gradient-to-r from-purple-500 to-indigo-600 text-white rounded-2xl
+                   font-bold text-lg btn-3d hover:from-purple-400 hover:to-indigo-500 flex items-center justify-center gap-2"
             @click="handleHome"
           >
-            <span class="text-xl">🏠</span>
-            返回主页
+            <span class="text-xl">📂</span>
+            返回存档
           </button>
         </div>
       </div>

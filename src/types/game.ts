@@ -56,6 +56,8 @@ export interface GameState {
   eventLog: { id: string; message: string; type: string; timestamp: number }[]
   score?: GameScore
   selectedBirdId?: string
+  slotId?: string
+  slotName?: string
 }
 
 export interface GameScore {
@@ -74,4 +76,28 @@ export interface WeatherEffect {
   healthMod: number
   awayChance?: number
   sickChance?: number
+}
+
+export interface SaveSummary {
+  slotId: string
+  slotName: string
+  phase: GamePhase
+  day: number
+  totalHatched: number
+  totalDied: number
+  breedingCount: number
+  aliveCount: number
+  adultCount: number
+  savedAt: number
+  score?: GameScore
+  coverBirdNames: string[]
+  currentWeather: Weather
+}
+
+export interface SaveSlot {
+  slotId: string
+  slotName: string
+  state: GameState
+  summary: SaveSummary
+  savedAt: number
 }

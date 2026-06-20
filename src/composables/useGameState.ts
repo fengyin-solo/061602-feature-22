@@ -1,5 +1,5 @@
 import { reactive, computed, watch } from 'vue'
-import type { GameState, Bird, Berry, GrowthStage, Personality, BerryType, Weather, GameScore } from '@/types/game'
+import type { GameState, Bird, Berry, GrowthStage, Personality, BerryType, Weather, GameScore, SaveSummary } from '@/types/game'
 import {
   ATTR_MIN, ATTR_MAX, DEATH_THRESHOLD,
   STAGE_DURATION, FOOD_NEED_MULTIPLIER,
@@ -10,7 +10,7 @@ import {
   MAX_BREEDING_ROUNDS, BIRD_NAMES,
 } from '@/utils/constants'
 import { randomInt, randomFloat, clamp, randomChoice, generateId, chance } from '@/utils/random'
-import { saveGame, loadGame, clearSave } from '@/utils/storage'
+import { saveGame as saveGameToStorage, loadGame, listSaves, deleteSave, clearSave, generateSlotId, renameSlot } from '@/utils/storage'
 
 const createInitialState = (): GameState => ({
   phase: 'start',
@@ -89,11 +89,18 @@ const addEventLog = (message: string, type: string = 'info') => {
   if (state.eventLog.length > 50) state.eventLog.pop()
 }
 
-const startGame = () => {
+const autoSave = () => {
+  if (state.phase === 'start') return
+  saveGameToStorage(state)
+}
+
+const startGame = (slotId?: string, slotName?: string) => {
   Object.assign(state, createInitialState())
   usedNames.clear()
   state.phase = 'playing'
-  clearSave()
+
+  state.slotId = slotId ?? generateSlotId()
+  state.slotName = slotName ?? `第 ${listSaves().length + 1} 窝`
 
   const eggCount = randomInt(MIN_EGGS, MAX_EGGS)
   for (let i = 0; i < eggCount; i++) {
@@ -102,7 +109,7 @@ const startGame = () => {
 
   addEventLog(`🎉 新的一窝！鸟巢里有 ${eggCount} 颗蛋在等待孵化~`, 'success')
   startGameLoop()
-  saveGame(state)
+  autoSave()
 }
 
 const startGameLoop = () => {
@@ -152,7 +159,7 @@ const updateGame = (deltaMs: number) => {
 
   cleanupExpiredBerries()
   checkGameEnd()
-  saveGame(state)
+  autoSave()
 }
 
 const updateBird = (bird: Bird, deltaMs: number, weatherEffect: ReturnType<typeof getWeatherEffects>) => {
@@ -457,7 +464,7 @@ const endGame = (_reason: string) => {
   state.phase = 'ended'
   state.score = calculateScore()
   addEventLog('🎮 游戏结束', 'info')
-  saveGame(state)
+  autoSave()
 }
 
 const restartGame = () => {
@@ -468,17 +475,53 @@ const restartGame = () => {
 const returnToStart = () => {
   stopGameLoop()
   Object.assign(state, createInitialState())
-  clearSave()
 }
 
-const tryLoadGame = (): boolean => {
-  const saved = loadGame()
-  if (saved && saved.phase === 'playing' || saved?.phase === 'breeding') {
+const tryLoadGame = (slotId?: string): boolean => {
+  if (slotId) {
+    const saved = loadGame(slotId)
+    if (saved) {
+      Object.assign(state, saved)
+      if (saved.phase === 'playing' || saved.phase === 'breeding') {
+        startGameLoop()
+      }
+      return true
+    }
+    return false
+  }
+
+  const saves = listSaves()
+  if (saves.length === 0) return false
+  const latestActive = saves.find(s => s.phase === 'playing' || s.phase === 'breeding')
+  const target = latestActive ?? saves[0]
+  const saved = loadGame(target.slotId)
+  if (saved) {
     Object.assign(state, saved)
-    startGameLoop()
+    if (saved.phase === 'playing' || saved.phase === 'breeding') {
+      startGameLoop()
+    }
     return true
   }
   return false
+}
+
+const getAllSaves = (): SaveSummary[] => {
+  return listSaves()
+}
+
+const removeSave = (slotId: string): void => {
+  deleteSave(slotId)
+  if (state.slotId === slotId) {
+    stopGameLoop()
+    Object.assign(state, createInitialState())
+  }
+}
+
+const renameSave = (slotId: string, newName: string): void => {
+  renameSlot(slotId, newName)
+  if (state.slotId === slotId) {
+    state.slotName = newName
+  }
 }
 
 watch(
@@ -504,6 +547,9 @@ export function useGameState() {
     restartGame,
     returnToStart,
     tryLoadGame,
+    getAllSaves,
+    removeSave,
+    renameSave,
     allAdults,
     aliveCount,
   }
